@@ -1,0 +1,112 @@
+# Reusable Rust CI in one job: toolchain from rust-toolchain.toml, then
+# cargo fmt, cargo deny, clippy and tests. Each check runs even if an
+# earlier one failed, so one run reports everything. The cargo cache is
+# saved only from the default branch and restored on PRs.
+#
+#   on:
+#     push: { branches: [main], paths-ignore: ["docs/**", "**/*.md"] }
+#     pull_request: { paths-ignore: ["docs/**", "**/*.md"] }
+#   permissions:
+#     contents: read
+#   concurrency:
+#     group: ci-${{ github.ref }}
+#     cancel-in-progress: true
+#   jobs:
+#     rust:
+#       uses: flowtoys-inc/dev-standards/.github/workflows/rust-ci.yml@<sha> # vX.Y.Z
+#       with:
+#         test-command: cargo xtask test
+#
+# Firmware that needs a cross toolchain or vendor SDK keeps that job in its
+# own repo (a reusable workflow can't run the caller's composite actions
+# before its own steps), and calls this one for the host-side checks.
+name: rust-ci
+
+on:
+  workflow_call:
+    inputs:
+      apt-packages:
+        description: Extra apt packages to install first, space-separated (e.g. libclang-dev for bindgen).
+        type: string
+        default: ""
+      submodules:
+        description: actions/checkout `submodules` value.
+        type: string
+        default: "false"
+      deny:
+        description: Run `cargo deny check` (needs a deny.toml).
+        type: boolean
+        default: true
+      clippy-command:
+        type: string
+        default: cargo clippy --workspace --all-targets --locked -- -D warnings
+      test-command:
+        type: string
+        default: cargo test --workspace --locked
+      extra-checks:
+        description: Shell commands run after the tests (e.g. generated-file freshness).
+        type: string
+        default: ""
+      cache-key:
+        description: Extra key for Swatinem/rust-cache, so callers building different targets keep separate caches.
+        type: string
+        default: ""
+      timeout-minutes:
+        type: number
+        default: 20
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_PROFILE_DEV_DEBUG: 0
+  CARGO_PROFILE_TEST_DEBUG: 0
+
+jobs:
+  rust:
+    name: Rust
+    runs-on: ubuntu-26.04
+    timeout-minutes: ${{ inputs.timeout-minutes }}
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          submodules: ${{ inputs.submodules }}
+          persist-credentials: false
+      - name: Install apt packages
+        if: inputs.apt-packages != ''
+        env:
+          APT_PACKAGES: ${{ inputs.apt-packages }}
+        run: |
+          # shellcheck disable=SC2086 # split into one argument per package
+          sudo apt-get update && sudo apt-get install -y --no-install-recommends $APT_PACKAGES
+      - name: Install toolchain from rust-toolchain.toml
+        run: rustup toolchain install
+      - name: Format
+        run: cargo fmt --all --check
+      - name: Deny
+        if: inputs.deny && (success() || failure())
+        uses: EmbarkStudios/cargo-deny-action@3c6349835b2b7b196a839186cb8b78e02f7b5f25 # v2.1.1
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        if: success() || failure()
+        with:
+          key: ${{ inputs.cache-key }}
+          cache-on-failure: true
+          save-if: ${{ github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
+      - name: Clippy
+        if: success() || failure()
+        env:
+          CLIPPY_COMMAND: ${{ inputs.clippy-command }}
+        run: bash -euo pipefail -c "$CLIPPY_COMMAND"
+      - name: Test
+        if: success() || failure()
+        env:
+          TEST_COMMAND: ${{ inputs.test-command }}
+        run: bash -euo pipefail -c "$TEST_COMMAND"
+      - name: Extra checks
+        if: inputs.extra-checks != '' && (success() || failure())
+        env:
+          EXTRA_CHECKS: ${{ inputs.extra-checks }}
+        run: bash -euo pipefail -c "$EXTRA_CHECKS"

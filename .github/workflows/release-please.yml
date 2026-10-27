@@ -1,0 +1,50 @@
+# Reusable release-please: keeps a "chore(<branch>): release x.y.z" PR open
+# that bumps the version and CHANGELOG.md from Conventional Commits; merging
+# it tags vX.Y.Z and publishes a GitHub Release. Needs
+# release-please-config.json and .release-please-manifest.json in the caller,
+# and the repo setting that lets Actions create pull requests.
+#
+#   on: { push: { branches: [main] } }
+#   permissions: { contents: write, pull-requests: write }
+#   jobs:
+#     release:
+#       uses: flowtoys-inc/dev-standards/.github/workflows/release-please.yml@<sha> # vX.Y.Z
+#
+# Use the outputs to build and upload release assets in a later job:
+#
+#     firmware:
+#       needs: release
+#       if: needs.release.outputs.release_created == 'true'
+name: release-please
+
+on:
+  workflow_call:
+    outputs:
+      release_created:
+        description: "'true' when this run created a release"
+        value: ${{ jobs.release-please.outputs.release_created }}
+      tag_name:
+        description: The tag of the created release, e.g. v1.2.3
+        value: ${{ jobs.release-please.outputs.tag_name }}
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release-please:
+    name: release-please
+    runs-on: ubuntu-26.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      pull-requests: write
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
+    steps:
+      - uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
+        id: release
+        with:
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
