@@ -144,8 +144,12 @@ PCB projects.
 - **Tag each board revision** that goes to fab (for example `v1.2`).
   Commit fab outputs (gerbers, drill files, BOM, placement) only for
   tagged releases, or attach them to the GitHub Release.
-- **Store large binaries in Git LFS:** STEP models, zips, PDFs and
-  rendered images.
+- **Keep binaries in plain git by default.** Vendor STEP models,
+  datasheets and dated fab zips are added once and never edited, so Git
+  LFS saves nothing and makes every contributor install git-lfs. Use LFS
+  only for files over a few MB that are regenerated under the same name
+  (for example a board STEP export or a rendered STL). Moving existing
+  files to LFS without `git lfs migrate` doesn't shrink clones.
 - **CI is optional.** If a repo adds ERC/DRC (for example KiBot), run it
   on Linux only, path-filtered to the schematic and PCB files.
 

@@ -41,4 +41,7 @@ minutes in the PR. Ask before adding macOS or Windows jobs.
 
 - Use the KiCad version pinned in the README.
 - Tag each board revision that goes to fab.
-- Large binaries (STEP, zip, PDF) go through Git LFS.
+- Commit fab outputs only for tagged revisions, or attach them to the
+  GitHub Release.
+- Keep binaries in plain git. Git LFS is only for files over a few MB
+  that you regenerate under the same name.
