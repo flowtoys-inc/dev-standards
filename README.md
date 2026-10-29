@@ -87,9 +87,9 @@ name: CI
 on:
   push:
     branches: [main]
-    paths-ignore: ["docs/**", "**/*.md"]
+    paths-ignore: ["brain/**", "**/*.md"]
   pull_request:
-    paths-ignore: ["docs/**", "**/*.md"]
+    paths-ignore: ["brain/**", "**/*.md"]
 
 permissions:
   contents: read

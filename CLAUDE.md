@@ -295,10 +295,18 @@ Once that repo exists, settings change only through it.
   without Claude, so every repo's `README.md` alone is enough to build,
   test and contribute. Contribution rules live in
   [`CONTRIBUTING.md`](CONTRIBUTING.md) here, and repos link to it.
+- **Developer and agent docs live in `brain/`.** `brain/README.md` is
+  the routing table: it maps each area of the code to the docs that
+  describe it. Read it before changing code.
 - **Keep these up to date in the same PR as the change:**
   - `README.md`: what the repo is, plus a quickstart
-  - development workflow and commands, in `docs/` or the README
+  - `brain/`: every doc that describes the code you changed
   - `CLAUDE.md` / `AGENTS.md`: project-specific rules
+- **Every change checks `brain/`, however small.** Look up each changed
+  file in `brain/README.md` and read the docs it routes to. If the change
+  makes a sentence, table row or code citation there false or
+  incomplete, fix it in the same commit. End the PR body with one line:
+  `Brain: updated <files>` or `Brain: no change needed (<why>)`.
 - **Record facts learned from real hardware and systems** (devices,
-  radios, SDK quirks) in `docs/`, with where and on what each was
+  radios, SDK quirks) in `brain/`, with where and on what each was
   observed.
