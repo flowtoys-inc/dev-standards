@@ -36,7 +36,7 @@ jobs:
       contents: read
       pull-requests: read
     steps:
-      - uses: amannn/action-semantic-pull-request@48f256284bd46cdaab1048c3721360e808335d50 # v6.1.1
+      - uses: amannn/action-semantic-pull-request@2252a14e810aa9b85c2d560bd7070c802206ecf6 # v6.1.2
         env:
           GITHUB_TOKEN: ${{ github.token }}
         with:
@@ -59,7 +59,7 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
       - if: (success() || failure()) && github.event.action != 'edited'
-        uses: trufflesecurity/trufflehog@31ce31ee1abbcc7dc8eee5764c17121c3044c8b2 # v3.99.7
+        uses: trufflesecurity/trufflehog@ea68ca03c865c5f324e86e849ced20ed3cf9dbbb # v3.99.8
         with:
           # verified = a live credential; unknown = could not be checked, still wants eyes.
           extra_args: --results=verified,unknown ${{ inputs.trufflehog-args }}
